@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idan's Clean Method — Beyond the Label</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────── */
+:root{
+  --cream:#F0EDE4;
+  --cream-dark:#E6E1D6;
+  --sage:#7D9B76;
+  --sage-deep:#3D5C35;
+  --fig:#2C2A24;
+  --parchment:#B5A98A;
+  --parchment-light:#D4CFC3;
+  --body:#4A4740;
+  --muted:#6B6860;
+  --white:#FDFCF9;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+/* ── RESET ───────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{background:var(--cream);color:var(--body);font-family:var(--sans);font-size:16px;line-height:1.7;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+/* ── SCROLL PROGRESS ─────────────────────────── */
+.scroll-prog{
+  position:fixed;top:0;left:0;height:2px;width:0%;
+  background:var(--sage);z-index:200;
+  transition:width .12s linear;
+}
+
+/* ── NAV ─────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:120;
+  background:rgba(240,237,228,0.82);
+  backdrop-filter:saturate(140%) blur(10px);
+  -webkit-backdrop-filter:saturate(140%) blur(10px);
+  border-bottom:0.5px solid var(--parchment-light);
+  padding:0 clamp(1.5rem,5vw,4rem);
+  height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:height .3s var(--ease),background .3s var(--ease);
+}
+nav.scrolled{height:56px;background:rgba(240,237,228,0.94)}
+.nav-brand{
+  font-family:var(--serif);
+  font-size:18px;color:var(--fig);letter-spacing:0.01em;
+}
+.nav-brand span{
+  display:block;font-family:var(--sans);
+  font-size:9px;font-weight:500;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--sage);margin-top:1px;
+}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{
+  position:relative;
+  font-size:12px;font-weight:500;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--muted);transition:color 0.25s;
+}
+.nav-links a:not(.nav-cta)::after{
+  content:'';position:absolute;left:0;bottom:-6px;
+  width:0;height:1px;background:var(--fig);
+  transition:width .3s var(--ease);
+}
+.nav-links a:not(.nav-cta):hover,
+.nav-links a.is-active{color:var(--fig)}
+.nav-links a:not(.nav-cta):hover::after,
+.nav-links a.is-active::after{width:100%}
+.nav-cta{
+  background:var(--sage);color:var(--white)!important;
+  padding:8px 18px;border-radius:6px;
+  font-size:12px!important;font-weight:500!important;
+  letter-spacing:0.08em!important;transition:background 0.25s,transform 0.25s!important;
+}
+.nav-cta:hover{background:var(--sage-deep)!important;transform:translateY(-1px)}
+.nav-mobile-btn{display:none;background:none;border:none;cursor:pointer;padding:6px}
+.nav-mobile-btn span{display:block;width:22px;height:1.5px;background:var(--fig);margin:4px 0;transition:transform .3s var(--ease),opacity .25s}
+.nav-mobile-btn.open span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.nav-mobile-btn.open span:nth-child(2){opacity:0}
+.nav-mobile-btn.open span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+
+/* ── MOBILE MENU ─────────────────────────────── */
+.mobile-menu{
+  position:fixed;top:64px;left:0;right:0;z-index:110;
+  background:var(--cream);
+  border-bottom:0.5px solid var(--parchment-light);
+  padding:1rem clamp(1.5rem,5vw,4rem) 1.5rem;
+  display:flex;flex-direction:column;gap:2px;
+  transform:translateY(-12px);opacity:0;pointer-events:none;
+  transition:transform .35s var(--ease),opacity .35s var(--ease);
+}
+.mobile-menu.open{transform:translateY(0);opacity:1;pointer-events:auto}
+.mobile-menu a{
+  padding:14px 0;border-bottom:0.5px solid var(--parchment-light);
+  font-size:13px;font-weight:500;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--body);
+}
+.mobile-menu a:last-child{border-bottom:none}
+.mobile-menu .mm-cta{color:var(--sage)}
+
+/* ── HERO ────────────────────────────────────── */
+.hero{
+  min-height:92vh;
+  display:flex;align-items:center;
+  padding:clamp(4rem,10vh,7rem) clamp(1.5rem,5vw,4rem);
+  position:relative;
+  overflow:hidden;
+}
+.hero-orbit{
+  position:absolute;border-radius:50%;
+  border:0.5px solid var(--parchment-light);
+  pointer-events:none;will-change:transform;
+}
+.hero-orbit.o1{right:-10%;top:15%;width:420px;height:420px;animation:float-a 16s ease-in-out infinite}
+.hero-orbit.o2{right:5%;top:30%;width:220px;height:220px;animation:float-b 13s ease-in-out infinite}
+.hero-orbit.o3{right:22%;top:58%;width:90px;height:90px;border-color:var(--parchment);animation:float-a 11s ease-in-out infinite reverse}
+.hero-orbit.dot{right:14%;top:24%;width:8px;height:8px;background:var(--sage);border:none;animation:float-b 9s ease-in-out infinite}
+@keyframes float-a{0%,100%{transform:translate(0,0)}50%{transform:translate(-16px,22px)}}
+@keyframes float-b{0%,100%{transform:translate(0,0)}50%{transform:translate(14px,-18px)}}
+
+.hero-inner{max-width:720px;position:relative;z-index:2}
+.hero-eyebrow{
+  font-size:10px;font-weight:500;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--sage);margin-bottom:1.75rem;
+  display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::before{content:'';width:28px;height:0.5px;background:var(--sage);transform-origin:left;animation:line-grow 1s var(--ease) .2s both}
+@keyframes line-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.hero-headline{
+  font-family:var(--serif);
+  font-size:clamp(42px,6vw,72px);
+  font-weight:400;color:var(--fig);
+  line-height:1.1;letter-spacing:-0.01em;
+  margin-bottom:1.75rem;
+}
+.hero-headline em{font-style:italic;color:var(--sage)}
+.hero-subhead{
+  font-size:clamp(15px,1.8vw,18px);color:var(--body);
+  line-height:1.75;max-width:540px;margin-bottom:2.5rem;
+}
+.hero-moments{
+  display:flex;gap:0;margin-bottom:2.75rem;
+  border:0.5px solid var(--parchment-light);border-radius:10px;
+  overflow:hidden;max-width:480px;
+  background:var(--white);
+}
+.moment{
+  flex:1;padding:14px 16px;
+  border-right:0.5px solid var(--parchment-light);
+  text-align:center;position:relative;
+  transition:background .5s var(--ease);
+}
+.moment:last-child{border-right:none}
+.moment::after{
+  content:'';position:absolute;left:0;bottom:0;height:2px;width:100%;
+  background:var(--sage);transform:scaleX(0);transform-origin:left;
+  transition:transform .6s var(--ease);
+}
+.moment.is-now{background:rgba(125,155,118,0.08)}
+.moment.is-now::after{transform:scaleX(1)}
+.moment-time{
+  font-size:9px;font-weight:500;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--sage);margin-bottom:4px;
+}
+.moment-item{font-size:13px;color:var(--fig);font-weight:500}
+.moment-swap{
+  font-size:10px;color:var(--sage-deep);margin-top:3px;
+  font-style:italic;font-weight:500;
+}
+.hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn-primary{
+  background:var(--sage);color:var(--white);
+  padding:14px 28px;border-radius:7px;
+  font-size:13px;font-weight:500;letter-spacing:0.05em;
+  border:none;cursor:pointer;transition:background 0.25s,transform 0.25s;
+  display:inline-block;
+}
+.btn-primary .arr{display:inline-block;transition:transform .3s var(--ease)}
+.btn-primary:hover{background:var(--sage-deep);transform:translateY(-1px)}
+.btn-primary:hover .arr{transform:translateX(4px)}
+.btn-ghost{
+  color:var(--body);font-size:13px;font-weight:500;
+  padding:14px 0;letter-spacing:0.03em;
+  display:inline-flex;align-items:center;gap:6px;
+  border-bottom:0.5px solid var(--parchment);
+  transition:color 0.2s,border-color 0.2s;
+}
+.btn-ghost .arr{display:inline-block;transition:transform .3s var(--ease)}
+.btn-ghost:hover{color:var(--fig);border-color:var(--fig)}
+.btn-ghost:hover .arr{transform:translateY(3px)}
+.hero-scarcity{
+  margin-top:2rem;
+  font-size:11px;font-weight:500;letter-spacing:0.08em;
+  color:var(--muted);display:flex;align-items:center;gap:8px;
+}
+.hero-scarcity::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sage);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.7);opacity:.45}}
+
+/* ── SECTION WRAPPER ─────────────────────────── */
+.sec{padding:clamp(4rem,8vh,6rem) clamp(1.5rem,5vw,4rem)}
+.sec-inner{max-width:1080px;margin:0 auto}
+.sec-eyebrow{
+  font-size:10px;font-weight:500;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--sage);
+  margin-bottom:1rem;display:flex;align-items:center;gap:10px;
+}
+.sec-eyebrow::before{content:'';width:20px;height:0.5px;background:var(--sage)}
+.sec-headline{
+  font-family:var(--serif);
+  font-size:clamp(28px,4vw,46px);
+  font-weight:400;color:var(--fig);
+  line-height:1.2;margin-bottom:1.5rem;
+}
+.sec-headline em{font-style:italic;color:var(--sage)}
+.sec-body{font-size:16px;color:var(--body);line-height:1.8;max-width:640px}
+
+/* ── STORY SECTION ───────────────────────────── */
+.story-sec{background:var(--fig)}
+.story-sec .sec-eyebrow{color:#7D9B76}
+.story-sec .sec-eyebrow::before{background:#7D9B76}
+.story-sec .sec-headline{color:var(--white)}
+.story-sec .sec-headline em{color:#7D9B76}
+.story-sec .sec-body{color:#C4BFB5}
+.story-layout{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
+.story-quote{
+  border-left:1.5px solid #7D9B76;
+  padding-left:1.5rem;margin-top:2rem;
+}
+.story-quote p{
+  font-family:var(--serif);font-style:italic;
+  font-size:clamp(18px,2.5vw,24px);color:var(--white);
+  line-height:1.5;
+}
+.story-quote cite{
+  display:block;margin-top:1rem;
+  font-size:11px;font-weight:500;letter-spacing:0.12em;
+  text-transform:uppercase;color:#7D9B76;font-style:normal;
+}
+.canyon-moment{
+  background:#1E1C17;border-radius:12px;
+  padding:2rem;position:sticky;top:90px;
+}
+.canyon-eyebrow{
+  font-size:9px;font-weight:500;letter-spacing:0.18em;
+  text-transform:uppercase;color:#7D9B76;margin-bottom:1rem;
+}
+.canyon-headline{
+  font-family:var(--serif);font-size:26px;color:var(--white);
+  line-height:1.3;margin-bottom:1rem;
+}
+.canyon-rule{width:28px;height:0.5px;background:#7D9B76;margin-bottom:1rem}
+.canyon-text{font-size:14px;color:#8A857D;line-height:1.7}
+.canyon-pill{
+  display:inline-block;margin-top:1.25rem;
+  padding:6px 14px;border-radius:20px;
+  border:0.5px solid #3D5C35;
+  font-size:11px;font-weight:500;color:#7D9B76;
+  letter-spacing:0.08em;
+}
+
+/* ── AUDIT SECTION ───────────────────────────── */
+.audit-sec{background:var(--white)}
+.audit-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--parchment-light);
+  border:0.5px solid var(--parchment-light);
+  border-radius:12px;overflow:hidden;
+  margin-top:3rem;
+}
+.audit-card{
+  background:var(--white);
+  padding:1.75rem 1.5rem;position:relative;
+  transition:background 0.3s var(--ease);
+}
+.audit-card::before{
+  content:'';position:absolute;left:0;top:0;height:100%;width:0;
+  background:var(--sage);transition:width .3s var(--ease);
+}
+.audit-card:hover{background:#FDFCF8}
+.audit-card:hover::before{width:2px}
+.audit-time{
+  font-size:9px;font-weight:500;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--sage);margin-bottom:10px;
+}
+.audit-name{
+  font-family:var(--serif);font-size:20px;
+  color:var(--fig);margin-bottom:6px;line-height:1.2;
+}
+.audit-swap{
+  font-size:12px;color:var(--sage-deep);font-weight:500;
+  margin-bottom:10px;display:flex;align-items:center;gap:4px;
+}
+.audit-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── SIGNATURE MOTIF BAND ────────────────────── */
+.motif-band{
+  background:var(--fig);
+  padding:clamp(3.5rem,8vh,5.5rem) clamp(1.5rem,5vw,4rem);
+  text-align:center;
+}
+.motif-eyebrow{
+  font-size:10px;font-weight:500;letter-spacing:0.2em;
+  text-transform:uppercase;color:#7D9B76;margin-bottom:1.5rem;
+}
+.motif-rule{width:34px;height:0.5px;background:#7D9B76;margin:1.5rem auto}
+.motif-lines{font-family:var(--serif);font-size:clamp(26px,4.4vw,44px);color:var(--white);line-height:1.25}
+.motif-lines span{
+  display:block;opacity:0;transform:translateY(16px);
+  transition:opacity .7s var(--ease),transform .7s var(--ease);
+}
+.motif-lines span:nth-child(2){transition-delay:.18s}
+.motif-lines span:nth-child(3){transition-delay:.36s}
+.motif-band.visible .motif-lines span{opacity:1;transform:translateY(0)}
+.motif-sub{font-size:13px;color:#8A857D;margin-top:1.5rem;line-height:1.7;max-width:460px;margin-left:auto;margin-right:auto}
+
+/* ── SERVICE SECTION ─────────────────────────── */
+.service-sec{background:var(--cream-dark)}
+.service-layout{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-top:3rem}
+.service-scarcity-block{
+  text-align:center;padding:2.5rem;
+  border:0.5px solid var(--parchment-light);border-radius:12px;
+  background:var(--white);position:sticky;top:90px;
+}
+.scarcity-number{
+  font-family:var(--serif);font-size:72px;
+  color:var(--sage);line-height:1;margin-bottom:8px;
+}
+.scarcity-label{
+  font-size:11px;font-weight:500;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;
+}
+.scarcity-rule{width:28px;height:0.5px;background:var(--parchment-light);margin:0 auto 1.5rem}
+.scarcity-text{font-size:14px;color:var(--body);line-height:1.7;margin-bottom:2rem}
+.service-list{list-style:none;margin-top:1.25rem}
+.service-list li{
+  padding:1rem 0;border-bottom:0.5px solid var(--parchment-light);
+  display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--body);
+}
+.service-list li:last-child{border-bottom:none}
+.service-list li::before{
+  content:'✦';color:var(--sage);font-size:10px;margin-top:5px;flex-shrink:0;
+}
+.service-includes{
+  background:var(--fig);border-radius:12px;
+  padding:1.75rem;margin-top:1.5rem;
+}
+.si-title{
+  font-size:10px;font-weight:500;letter-spacing:0.14em;
+  text-transform:uppercase;color:#7D9B76;margin-bottom:1rem;
+}
+.si-list{list-style:none}
+.si-list li{
+  font-size:13px;color:#C4BFB5;padding:6px 0;
+  border-bottom:0.5px solid #3A3830;
+  display:flex;gap:10px;align-items:center;
+}
+.si-list li:last-child{border-bottom:none}
+.si-list li::before{content:'—';color:#7D9B76;font-size:10px}
+
+/* ── PRICING CONFIGURATOR ────────────────────── */
+.configurator{margin-top:3.5rem}
+.config-head{text-align:center;max-width:560px;margin:0 auto 2.25rem}
+.config-eyebrow{
+  font-size:10px;font-weight:500;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--sage);margin-bottom:0.75rem;
+  display:inline-flex;align-items:center;gap:10px;
+}
+.config-eyebrow::before,.config-eyebrow::after{content:'';width:18px;height:0.5px;background:var(--sage)}
+.config-title{font-family:var(--serif);font-size:clamp(24px,3.4vw,34px);color:var(--fig);line-height:1.2}
+.config-card{
+  background:var(--white);
+  border:0.5px solid var(--parchment-light);
+  border-radius:14px;
+  max-width:720px;margin:0 auto;
+  padding:clamp(1.75rem,4vw,2.5rem);
+}
+.calc-group{margin-bottom:1.5rem}
+.calc-label{
+  display:block;font-size:11px;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:0.65rem;
+}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg.seg-4{grid-template-columns:repeat(4,1fr)}
+.seg-btn{
+  background:var(--white);
+  border:0.5px solid var(--parchment-light);
+  border-radius:8px;padding:13px 8px;cursor:pointer;
+  text-align:center;font-family:var(--sans);
+  transition:background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease);
+}
+.seg-btn b{display:block;font-size:19px;font-weight:500;color:var(--fig);line-height:1;font-family:var(--serif)}
+.seg-btn span{display:block;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.seg-btn:hover{border-color:var(--sage);transform:translateY(-1px)}
+.seg-btn.is-active{background:var(--sage);border-color:var(--sage)}
+.seg-btn.is-active b,.seg-btn.is-active span{color:var(--white)}
+
+.calc-divider{height:0.5px;background:var(--parchment-light);margin:1.75rem 0}
+.calc-price{text-align:center;margin-bottom:1.5rem}
+.calc-price-label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)}
+.calc-price-amount{
+  font-family:var(--serif);font-size:clamp(56px,9vw,76px);
+  color:var(--sage);line-height:1;margin:0.4rem 0;
+  display:flex;align-items:flex-start;justify-content:center;gap:2px;
+}
+.calc-cur{font-size:0.5em;margin-top:0.5em;color:var(--sage)}
+.calc-price-meta{font-size:13px;color:var(--body)}
+.calc-wa{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;background:var(--sage);color:var(--white);
+  padding:16px;border-radius:8px;
+  font-size:14px;font-weight:500;letter-spacing:0.04em;
+  transition:background 0.25s,transform 0.25s;
+}
+.calc-wa:hover{background:var(--sage-deep);transform:translateY(-1px)}
+.calc-wa svg{width:18px;height:18px;flex-shrink:0}
+.calc-note{
+  text-align:center;margin-top:1rem;
+  font-size:11px;color:var(--muted);letter-spacing:0.05em;font-style:italic;
+}
+
+/* ── FULL PRICE TABLE ────────────────────────── */
+.calc-table-wrap{max-width:720px;margin:2.5rem auto 0}
+.calc-table-title{
+  font-size:10px;font-weight:500;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:1rem;text-align:center;
+}
+.calc-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--white);border:0.5px solid var(--parchment-light);border-radius:12px;overflow:hidden}
+.calc-table th,.calc-table td{padding:14px 10px;text-align:center;border-bottom:0.5px solid var(--parchment-light)}
+.calc-table thead th{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);background:var(--cream)}
+.calc-table tbody tr:last-child td{border-bottom:none}
+.calc-table .row-head{text-align:left;font-weight:500;color:var(--fig);font-family:var(--serif)}
+.calc-table td.price-cell{cursor:pointer;color:var(--body);transition:background .2s,color .2s}
+.calc-table td.price-cell:hover{background:rgba(125,155,118,0.07)}
+.calc-table td.price-cell.cell-active{background:rgba(125,155,118,0.16);color:var(--sage-deep);font-weight:600}
+
+/* ── SPEAKING SECTION ────────────────────────── */
+.speaking-sec{background:var(--white)}
+.speaking-layout{
+  display:grid;grid-template-columns:1fr 1fr;gap:4rem;
+  align-items:start;margin-top:3rem;
+}
+.speaking-list{list-style:none;margin-bottom:2rem}
+.speaking-list li{
+  padding:10px 0;border-bottom:0.5px solid var(--parchment-light);
+  font-size:14px;color:var(--body);display:flex;gap:10px;
+}
+.speaking-list li::before{content:'—';color:var(--sage)}
+.speaking-form{
+  background:var(--cream);border-radius:12px;
+  padding:2rem;border:0.5px solid var(--parchment-light);
+  position:sticky;top:90px;
+}
+.form-eyebrow{
+  font-size:9px;font-weight:500;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--sage);margin-bottom:0.75rem;
+}
+.form-title{
+  font-family:var(--serif);font-size:22px;color:var(--fig);
+  margin-bottom:1.5rem;line-height:1.3;
+}
+.form-group{margin-bottom:1rem}
+.form-label{
+  display:block;font-size:11px;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px;
+}
+.form-input{
+  width:100%;padding:10px 14px;
+  background:var(--white);border:0.5px solid var(--parchment-light);
+  border-radius:7px;font-size:14px;color:var(--fig);
+  font-family:var(--sans);outline:none;transition:border-color 0.2s;
+}
+.form-input:focus{border-color:var(--sage)}
+.form-select{
+  width:100%;padding:10px 14px;
+  background:var(--white);border:0.5px solid var(--parchment-light);
+  border-radius:7px;font-size:14px;color:var(--fig);
+  font-family:var(--sans);outline:none;appearance:none;
+  cursor:pointer;transition:border-color 0.2s;
+}
+.form-select:focus{border-color:var(--sage)}
+.form-note{font-size:11px;color:var(--muted);margin-top:1rem;line-height:1.5;font-style:italic}
+.form-submit{
+  width:100%;padding:14px;background:var(--fig);color:var(--white);
+  border:none;border-radius:7px;font-size:13px;font-weight:500;
+  letter-spacing:0.06em;cursor:pointer;margin-top:1rem;
+  font-family:var(--sans);transition:background 0.2s,transform 0.2s;
+}
+.form-submit:hover{background:var(--sage-deep);transform:translateY(-1px)}
+.form-success{display:none;text-align:center;padding:2rem}
+.form-success-title{font-family:var(--serif);font-size:22px;color:var(--fig);margin-bottom:0.75rem}
+.form-success-text{font-size:14px;color:var(--muted)}
+
+/* ── CTA FINAL ───────────────────────────────── */
+.cta-final{
+  background:var(--fig);
+  padding:clamp(4rem,8vh,6rem) clamp(1.5rem,5vw,4rem);
+  text-align:center;
+}
+.cta-final-eyebrow{
+  font-size:10px;font-weight:500;letter-spacing:0.18em;
+  text-transform:uppercase;color:#7D9B76;
+  margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:10px;
+}
+.cta-final-eyebrow::before,.cta-final-eyebrow::after{content:'';width:20px;height:0.5px;background:#7D9B76}
+.cta-final-headline{
+  font-family:var(--serif);font-size:clamp(30px,5vw,56px);
+  color:var(--white);line-height:1.15;margin-bottom:1.5rem;
+}
+.cta-final-headline em{font-style:italic;color:#7D9B76}
+.cta-final-sub{font-size:16px;color:#8A857D;max-width:520px;margin:0 auto 2.5rem;line-height:1.7}
+.cta-wa{
+  display:inline-flex;align-items:center;gap:10px;
+  background:#7D9B76;color:var(--white);
+  padding:16px 32px;border-radius:8px;
+  font-size:14px;font-weight:500;letter-spacing:0.04em;
+  transition:background 0.25s,transform 0.25s;
+}
+.cta-wa:hover{background:#3D5C35;transform:translateY(-1px)}
+.cta-wa-icon{width:20px;height:20px}
+.cta-kosher{
+  margin-top:2rem;font-size:11px;color:#5A5750;
+  letter-spacing:0.1em;text-transform:uppercase;
+}
+
+/* ── FOOTER ──────────────────────────────────── */
+footer{
+  background:var(--fig);
+  border-top:0.5px solid #3A3830;
+  padding:2rem clamp(1.5rem,5vw,4rem);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:1rem;
+}
+.footer-brand{font-family:var(--serif);font-size:15px;color:var(--white)}
+.footer-note{font-size:11px;color:#5A5750;letter-spacing:0.04em}
+
+/* ── KOSHER BADGE ────────────────────────────── */
+.kosher-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border:0.5px solid var(--parchment-light);
+  border-radius:20px;background:var(--white);
+  font-size:10px;font-weight:500;color:var(--muted);
+  letter-spacing:0.1em;text-transform:uppercase;
+}
+.kosher-badge::before{content:'✦';font-size:8px;color:var(--sage)}
+
+/* ── TRANSITIONS / REVEAL ────────────────────── */
+.reveal{
+  opacity:0;transform:translateY(22px);
+  transition:opacity 0.7s var(--ease),transform 0.7s var(--ease);
+}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s}
+
+/* ── RESPONSIVE ──────────────────────────────── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .nav-mobile-btn{display:block}
+  .story-layout,.service-layout,.app-layout,.speaking-layout{grid-template-columns:1fr}
+  .canyon-moment,.service-scarcity-block,.speaking-form{position:static}
+  .audit-grid{grid-template-columns:1fr}
+  .hero-orbit{display:none}
+  .hero-moments{flex-direction:column}
+  .moment{border-right:none;border-bottom:0.5px solid var(--parchment-light)}
+  .moment:last-child{border-bottom:none}
+  .seg.seg-4{grid-template-columns:repeat(2,1fr)}
+  .calc-table th,.calc-table td{padding:11px 6px;font-size:12px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  .motif-lines span{opacity:1;transform:none}
+  .app-mockup .app-item{opacity:1;transform:none}
+  .hero-orbit,.hero-scarcity::before{animation:none}
+  *{transition-duration:0.01ms!important;animation-duration:0.01ms!important;animation-iteration-count:1!important}
+}
+</style>
+</head>
+<body>
+
+<div class="scroll-prog" id="scrollProg"></div>
+
+<!-- ── NAV ──────────────────────────────────── -->
+<nav id="nav">
+  <div class="nav-brand">
+    Idan's Clean Method
+    <span>Beyond the Label</span>
+  </div>
+  <div class="nav-links">
+    <a href="#story">My story</a>
+    <a href="#method">The method</a>
+    <a href="#service">The service</a>
+    <a href="#speaking">Speaking</a>
+    <a href="#service" class="nav-cta">Book a visit</a>
+  </div>
+  <button class="nav-mobile-btn" id="navToggle" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <a href="#story">My story</a>
+  <a href="#method">The method</a>
+  <a href="#service">The service</a>
+  <a href="#speaking">Speaking</a>
+  <a href="#service" class="mm-cta">Book a visit →</a>
+</div>
+
+<!-- ── HERO ─────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-orbit o1"></div>
+  <div class="hero-orbit o2"></div>
+  <div class="hero-orbit o3"></div>
+  <div class="hero-orbit dot"></div>
+  <div class="hero-inner">
+    <p class="hero-eyebrow reveal">Palm Beach County · Kosher Kitchen · Clean Method</p>
+    <h1 class="hero-headline reveal reveal-delay-1">
+      Your kitchen.<br>
+      Your family.<br>
+      <em>A week done right.</em>
+    </h1>
+    <p class="hero-subhead reveal reveal-delay-2">
+      A private chef who walks into your home, reviews every product in your pantry, swaps what doesn't serve your family, and cooks a week of anti-inflammatory kosher meals — then teaches you to shop this way on your own.
+    </p>
+
+    <div class="hero-moments reveal reveal-delay-2">
+      <div class="moment">
+        <div class="moment-time">Morning</div>
+        <div class="moment-item">Coffee creamer</div>
+        <div class="moment-swap">→ Califia Farms oat</div>
+      </div>
+      <div class="moment">
+        <div class="moment-time">Afternoon</div>
+        <div class="moment-item">Salad dressing</div>
+        <div class="moment-swap">→ Primal Kitchen</div>
+      </div>
+      <div class="moment">
+        <div class="moment-time">Evening</div>
+        <div class="moment-item">Supermarket bread</div>
+        <div class="moment-swap">→ Four ingredients</div>
+      </div>
+    </div>
+
+    <div class="hero-actions reveal reveal-delay-3">
+      <a href="#service" class="btn-primary">Build your visit <span class="arr">→</span></a>
+      <a href="#story" class="btn-ghost">My story <span class="arr">↓</span></a>
+    </div>
+    <p class="hero-scarcity reveal reveal-delay-3">Only 3 families per week · by application</p>
+  </div>
+</section>
+
+<!-- ── STORY ─────────────────────────────────── -->
+<section class="sec story-sec" id="story">
+  <div class="sec-inner">
+    <div class="story-layout">
+      <div>
+        <p class="sec-eyebrow reveal">The story</p>
+        <h2 class="sec-headline reveal">
+          They offered me<br>
+          <em>Ozempic.</em><br>
+          I chose the<br>
+          Grand Canyon.
+        </h2>
+        <p class="sec-body reveal">
+          I'm a chef. I built my career around food. And then my own body became the patient, and the prescription pad came out. Ozempic. Statins. The whole cascade.
+        </p>
+        <p class="sec-body reveal" style="margin-top:1rem">
+          At the Grand Canyon, standing at the rim, something shifted. The human body was not designed to depend on synthetic molecules for its basic function. It was designed to thrive — given real food, clean ingredients, and the space to do what it already knows how to do.
+        </p>
+        <div class="story-quote reveal">
+          <p>"Real food is not complicated. The food industry made it complicated. There's a difference."</p>
+          <cite>— Idan, Chef &amp; Founder</cite>
+        </div>
+      </div>
+      <div>
+        <div class="canyon-moment reveal">
+          <p class="canyon-eyebrow">The turning point</p>
+          <h3 class="canyon-headline">The Grand Canyon moment</h3>
+          <div class="canyon-rule"></div>
+          <p class="canyon-text">
+            Standing at the edge of something vast, I understood that the human body has the same capacity for renewal. The canyon was shaped by water and time, without interference. Your body works the same way — given the right ingredients and the right environment, it does the rest.
+          </p>
+          <p class="canyon-text" style="margin-top:1rem">
+            I flew home, cleared my kitchen, and built the method I now bring to families across Palm Beach County.
+          </p>
+          <span class="canyon-pill">The food is the medicine</span>
+        </div>
+        <div class="canyon-moment reveal" style="margin-top:1rem;background:#17150F">
+          <p class="canyon-eyebrow">Kosher · Palm Beach County</p>
+          <p style="font-size:13px;color:#8A857D;line-height:1.7">
+            Every ingredient, every product swap, every meal I prepare is fully kosher-certified. I serve the Jewish community of Boca Raton, Delray Beach, and the surrounding area — and I understand what it means to keep a kosher kitchen at the highest standard.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── THE METHOD ─────────────────────────────── -->
+<section class="sec audit-sec" id="method">
+  <div class="sec-inner">
+    <p class="sec-eyebrow reveal">The pantry audit</p>
+    <h2 class="sec-headline reveal">
+      Five ingredients<br>
+      found in most kitchens.<br>
+      <em>Here's what we replace them with.</em>
+    </h2>
+    <p class="sec-body reveal">
+      When I walk into a kitchen, the same five ingredients come up again and again — each one with a cleaner, better-tasting alternative. Reading a label isn't hard once you know what to look for.
+    </p>
+    <div class="audit-grid">
+      <div class="audit-card reveal">
+        <div class="audit-time">Morning · Coffee creamer</div>
+        <div class="audit-name">Conventional creamer</div>
+        <div class="audit-swap">✦ We use: oat or coconut-based</div>
+        <div class="audit-desc">Most creamers are built on refined seed oils and corn-derived sweeteners. The swap costs the same, tastes better, and starts your morning with ingredients that were designed to be food.</div>
+      </div>
+      <div class="audit-card reveal reveal-delay-1">
+        <div class="audit-time">Midday · Salad dressing</div>
+        <div class="audit-name">Bottled dressing</div>
+        <div class="audit-swap">✦ We use: avocado or olive oil base</div>
+        <div class="audit-desc">A salad is a good choice. The dressing is where most of the benefit gets undone. Avocado oil dressings — widely available, kosher-certified — change that completely.</div>
+      </div>
+      <div class="audit-card reveal reveal-delay-2">
+        <div class="audit-time">Evening · The bread basket</div>
+        <div class="audit-name">Supermarket bread</div>
+        <div class="audit-swap">✦ We use: four-ingredient loaves</div>
+        <div class="audit-desc">Bread needs flour, water, yeast, and salt. Most supermarket loaves have twenty-three ingredients. The clean version is on the same shelf — it just takes knowing which one to reach for.</div>
+      </div>
+      <div class="audit-card reveal">
+        <div class="audit-time">Everywhere · Added sweeteners</div>
+        <div class="audit-name">High-fructose corn syrup</div>
+        <div class="audit-swap">✦ We use: whole fruit sweeteners, honey</div>
+        <div class="audit-desc">It appears under 56 different names on ingredient labels. Ketchup, yogurt, granola bars. Replacing it doesn't mean giving up sweetness — it means choosing sweetness that your body recognizes.</div>
+      </div>
+      <div class="audit-card reveal reveal-delay-1">
+        <div class="audit-time">Pantry staples · Preservation</div>
+        <div class="audit-name">Synthetic preservatives</div>
+        <div class="audit-swap">✦ We use: naturally preserved products</div>
+        <div class="audit-desc">BHA, BHT, and TBHQ are petroleum-derived compounds that extend shelf life. Clean alternatives — preserved with vitamin E, rosemary extract, or nothing at all — are just as widely available.</div>
+      </div>
+      <div class="audit-card reveal reveal-delay-2" style="background:#FDFCF8">
+        <div class="audit-time" style="color:var(--sage)">The approach</div>
+        <div class="audit-name" style="font-family:var(--serif);color:var(--fig)">One swap at a time.</div>
+        <div class="audit-desc" style="margin-top:8px">You don't need to overhaul everything at once. The Clean Method starts with the next product you pick up. Momentum matters more than perfection — and the first swap is always the easiest.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SIGNATURE MOTIF ────────────────────────── -->
+<section class="motif-band reveal">
+  <p class="motif-eyebrow">What changes first</p>
+  <div class="motif-rule"></div>
+  <div class="motif-lines">
+    <span>Morning creamer.</span>
+    <span>Afternoon dressing.</span>
+    <span>Evening bread.</span>
+  </div>
+  <div class="motif-rule"></div>
+  <p class="motif-sub">Three products. Three clean swaps. Three moments in a day that start feeling different — usually within the first week.</p>
+</section>
+
+<!-- ── SERVICE ────────────────────────────────── -->
+<section class="sec service-sec" id="service">
+  <div class="sec-inner">
+    <p class="sec-eyebrow reveal">The service</p>
+    <h2 class="sec-headline reveal">
+      You pick the meals.<br>
+      I cook them <em>in your kitchen</em><br>
+      and leave it spotless.
+    </h2>
+    <p class="sec-body reveal">
+      This isn't a meal delivery service. You choose your meals and your family size, and I hand you an exact shopping list to fill. On the day, I cook everything fresh in your own kitchen, to your kosher standard, store it in your containers, clean up, and leave you a week of food with nothing to wash.
+    </p>
+    <div class="service-layout">
+      <div>
+        <ul class="service-list reveal">
+          <li>A precise shopping list built from the meals and family size you choose — so you buy exactly what's needed, nothing more.</li>
+          <li>I cook everything fresh, on the day, in your own kitchen.</li>
+          <li>Every dish prepared to your kosher standard.</li>
+          <li>Portioned and stored in your own containers, ready for the week.</li>
+          <li>I clean the kitchen before I leave. You come back to a tidy space.</li>
+        </ul>
+        <div class="service-includes reveal">
+          <p class="si-title">What you're left with</p>
+          <ul class="si-list">
+            <li>A week of meals in your own containers</li>
+            <li>A kitchen cleaner than I found it</li>
+            <li>No shopping guesswork — the list does it</li>
+            <li>Every dish to your kosher standard</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="service-scarcity-block reveal">
+          <div class="scarcity-number countup" data-target="3">3</div>
+          <div class="scarcity-label">Families per week · Maximum</div>
+          <div class="scarcity-rule"></div>
+          <p class="scarcity-text">
+            I limit my practice to three families per week — not as a marketing device, but because this level of attention cannot be scaled. Each kitchen I walk into gets my complete focus. When you book, you are not a client. You are a priority.
+          </p>
+          <a href="#configurator" class="btn-primary" style="display:block;text-align:center;width:100%">Build your visit <span class="arr">↓</span></a>
+          <p style="margin-top:1rem;font-size:11px;color:var(--muted);text-align:center;font-style:italic">Serving Boca Raton, Delray Beach &amp; surrounding area</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRICING CONFIGURATOR ── -->
+    <div class="configurator" id="configurator">
+      <div class="config-head reveal">
+        <p class="config-eyebrow">Build your visit</p>
+        <h3 class="config-title">Choose your week, see your price</h3>
+      </div>
+      <div class="config-card reveal" id="calc">
+        <div class="calc-group">
+          <span class="calc-label">Meals per day</span>
+          <div class="seg" id="seg-meals" role="group" aria-label="Meals per day">
+            <button type="button" class="seg-btn" data-meals="1"><b>1</b><span>meal</span></button>
+            <button type="button" class="seg-btn is-active" data-meals="2"><b>2</b><span>meals</span></button>
+            <button type="button" class="seg-btn" data-meals="3"><b>3</b><span>meals</span></button>
+          </div>
+        </div>
+        <div class="calc-group">
+          <span class="calc-label">Family size</span>
+          <div class="seg seg-4" id="seg-people" role="group" aria-label="Family size">
+            <button type="button" class="seg-btn" data-people="1-2"><b>1–2</b><span>people</span></button>
+            <button type="button" class="seg-btn is-active" data-people="3-4"><b>3–4</b><span>people</span></button>
+            <button type="button" class="seg-btn" data-people="5-6"><b>5–6</b><span>people</span></button>
+            <button type="button" class="seg-btn" data-people="7+"><b>7+</b><span>people</span></button>
+          </div>
+        </div>
+
+        <div class="calc-divider"></div>
+
+        <div class="calc-price">
+          <div class="calc-price-label">Price per visit · groceries not included</div>
+          <div class="calc-price-amount"><span class="calc-cur">$</span><span id="calc-amount">420</span></div>
+          <div class="calc-price-meta" id="calc-meta">2 meals · 3–4 people</div>
+        </div>
+
+        <a class="calc-wa" id="calc-wa" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="currentColor"/>
+          </svg>
+          Book this visit on WhatsApp
+        </a>
+        <p class="calc-note">Sends Idan your selection on WhatsApp — no commitment. Only 3 families per week.</p>
+      </div>
+
+      <!-- Full price table -->
+      <div class="calc-table-wrap reveal">
+        <p class="calc-table-title">Full price list · per visit, excluding groceries</p>
+        <table class="calc-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>1–2 people</th>
+              <th>3–4 people</th>
+              <th>5–6 people</th>
+              <th>7+ people</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-head">1 meal</td>
+              <td class="price-cell" data-meals="1" data-people="1-2">$250</td>
+              <td class="price-cell" data-meals="1" data-people="3-4">$320</td>
+              <td class="price-cell" data-meals="1" data-people="5-6">$390</td>
+              <td class="price-cell" data-meals="1" data-people="7+">$460</td>
+            </tr>
+            <tr>
+              <td class="row-head">2 meals</td>
+              <td class="price-cell" data-meals="2" data-people="1-2">$350</td>
+              <td class="price-cell" data-meals="2" data-people="3-4">$420</td>
+              <td class="price-cell" data-meals="2" data-people="5-6">$490</td>
+              <td class="price-cell" data-meals="2" data-people="7+">$560</td>
+            </tr>
+            <tr>
+              <td class="row-head">3 meals</td>
+              <td class="price-cell" data-meals="3" data-people="1-2">$450</td>
+              <td class="price-cell" data-meals="3" data-people="3-4">$540</td>
+              <td class="price-cell" data-meals="3" data-people="5-6">$620</td>
+              <td class="price-cell" data-meals="3" data-people="7+">$700</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SPEAKING ────────────────────────────────── -->
+<section class="sec speaking-sec" id="speaking">
+  <div class="sec-inner">
+    <div class="speaking-layout">
+      <div>
+        <p class="sec-eyebrow reveal">Live speaking</p>
+        <h2 class="sec-headline reveal">
+          Bring <em>Idan's<br>Clean Method</em><br>
+          to your stage.
+        </h2>
+        <p class="sec-body reveal">
+          A practical, engaging session that gives your audience the tools to read a food label, spot the five ingredients worth replacing, and make one clean swap before they walk out the door.
+        </p>
+        <ul class="speaking-list reveal">
+          <li>Corporate wellness programs &amp; HR departments</li>
+          <li>Jewish community organizations &amp; synagogues</li>
+          <li>Schools, JCCs, and health-focused nonprofits</li>
+        </ul>
+        <p class="sec-body reveal" style="margin-bottom:1.75rem">
+          Everyone in the room walks out with something I don't share anywhere else, online or off. You only get it from a seat in the audience.
+        </p>
+        <p class="sec-body reveal" style="font-family:var(--serif);font-style:italic;font-size:clamp(18px,2.2vw,24px);color:var(--fig);line-height:1.5">
+          "The food is the medicine."
+        </p>
+      </div>
+      <div>
+        <div class="speaking-form reveal" id="speaking-form-card">
+          <p class="form-eyebrow">Qualifying inquiry</p>
+          <h3 class="form-title">Bring Idan's Clean Method<br>to your stage</h3>
+          <div id="speaking-form-body">
+            <div class="form-group">
+              <label class="form-label" for="org-name">Your organization</label>
+              <input class="form-input" type="text" id="org-name" placeholder="e.g. Beth Emet Synagogue / Nextel HR">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="contact-name">Your name</label>
+              <input class="form-input" type="text" id="contact-name" placeholder="First and last name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="contact-email">Email</label>
+              <input class="form-input" type="email" id="contact-email" placeholder="you@organization.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="audience-size">Estimated audience size</label>
+              <select class="form-select" id="audience-size">
+                <option value="">Select range</option>
+                <option>Under 30 people</option>
+                <option>30 – 100 people</option>
+                <option>100 – 300 people</option>
+                <option>Over 300 people</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="event-date">Approximate date</label>
+              <input class="form-input" type="text" id="event-date" placeholder="e.g. September 2025 / flexible">
+            </div>
+            <p class="form-note">All inquiries are reviewed personally. If the engagement is a good fit, Idan will reach out within 48 hours.</p>
+            <button class="form-submit" id="speaking-submit">Send inquiry →</button>
+          </div>
+          <div class="form-success" id="form-success">
+            <div class="form-success-title">Thank you.</div>
+            <p class="form-success-text">Your inquiry has been received. If this feels like the right fit, Idan will be in touch within 48 hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA FINAL ──────────────────────────────── -->
+<section class="cta-final" id="contact">
+  <p class="cta-final-eyebrow reveal">Three families. One conversation.</p>
+  <h2 class="cta-final-headline reveal">
+    Let's make next week<br>
+    <em>feel different.</em>
+  </h2>
+  <p class="cta-final-sub reveal">A short conversation on WhatsApp is all it takes. Tell me about your household, and I'll walk you through exactly what a week with me looks like — no commitment, no pressure.</p>
+  <a href="https://wa.me/15615551234" class="cta-wa reveal" target="_blank" rel="noopener">
+    <svg class="cta-wa-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="currentColor"/>
+    </svg>
+    Message Idan on WhatsApp
+  </a>
+  <p class="cta-kosher reveal">✦ Fully kosher certified · Palm Beach County · Boca Raton &amp; Delray Beach</p>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────── -->
+<footer>
+  <span class="footer-brand">Idan's Clean Method</span>
+  <span class="footer-note">Beyond the Label · Palm Beach County · © 2025</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var WHATSAPP_NUMBER = '15615551234'; // ← Idan's WhatsApp number (digits only)
+
+  /* ── REVEAL ON SCROLL ───────────────────────── */
+  var revObs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target);}
+    });
+  },{threshold:0.12});
+  document.querySelectorAll('.reveal,.motif-band,.app-mockup').forEach(function(el){revObs.observe(el)});
+
+  /* ── COUNT-UP STATS ─────────────────────────── */
+  function tween(el,from,to,dur,suffix){
+    if(reduce){el.textContent=to+(suffix||'');return;}
+    var start=performance.now();
+    (function step(now){
+      var t=Math.min(1,(now-start)/dur);
+      var e=1-Math.pow(1-t,3);
+      el.textContent=Math.round(from+(to-from)*e)+(suffix||'');
+      if(t<1)requestAnimationFrame(step);
+    })(performance.now());
+  }
+  var countObs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        tween(e.target,0,parseInt(e.target.dataset.target,10),1100);
+        countObs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.5});
+  document.querySelectorAll('.countup').forEach(function(el){countObs.observe(el)});
+
+  /* ── SCROLL PROGRESS + NAV STATE ────────────── */
+  var prog=document.getElementById('scrollProg');
+  var nav=document.getElementById('nav');
+  function onScroll(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    prog.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';
+    nav.classList.toggle('scrolled',window.scrollY>40);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  /* ── SCROLL SPY (active nav link) ───────────── */
+  var navLinks=Array.prototype.slice.call(document.querySelectorAll('.nav-links a:not(.nav-cta)'));
+  var spyObs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        var id=e.target.getAttribute('id');
+        navLinks.forEach(function(a){
+          a.classList.toggle('is-active',a.getAttribute('href')==='#'+id);
+        });
+      }
+    });
+  },{rootMargin:'-45% 0px -50% 0px'});
+  ['story','method','service','speaking'].forEach(function(id){
+    var s=document.getElementById(id);if(s)spyObs.observe(s);
+  });
+
+  /* ── MOBILE MENU ────────────────────────────── */
+  var toggle=document.getElementById('navToggle');
+  var menu=document.getElementById('mobileMenu');
+  function closeMenu(){toggle.classList.remove('open');menu.classList.remove('open');toggle.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true');}
+  toggle.addEventListener('click',function(){
+    var open=menu.classList.toggle('open');
+    toggle.classList.toggle('open',open);
+    toggle.setAttribute('aria-expanded',open?'true':'false');
+    menu.setAttribute('aria-hidden',open?'false':'true');
+  });
+  menu.querySelectorAll('a').forEach(function(a){a.addEventListener('click',closeMenu)});
+
+  /* ── HERO DAY-CYCLE HIGHLIGHT ───────────────── */
+  if(!reduce){
+    var moments=document.querySelectorAll('.hero-moments .moment');
+    if(moments.length){
+      var i=0;
+      moments[0].classList.add('is-now');
+      setInterval(function(){
+        moments[i].classList.remove('is-now');
+        i=(i+1)%moments.length;
+        moments[i].classList.add('is-now');
+      },2600);
+    }
+  }
+
+  /* ── PRICING CONFIGURATOR ───────────────────── */
+  var PRICES={
+    '1':{'1-2':250,'3-4':320,'5-6':390,'7+':460},
+    '2':{'1-2':350,'3-4':420,'5-6':490,'7+':560},
+    '3':{'1-2':450,'3-4':540,'5-6':620,'7+':700}
+  };
+  var state={meals:'2',people:'3-4'};
+  var amountEl=document.getElementById('calc-amount');
+  var metaEl=document.getElementById('calc-meta');
+  var waEl=document.getElementById('calc-wa');
+  var calcRevealed=false;
+
+  function fmtMeals(m){return m+(m==='1'?' meal':' meals');}
+  function fmtPeople(p){return p.replace('-','–')+' people';}
+
+  function buildWa(){
+    var price=PRICES[state.meals][state.people];
+    var msg='Hi Idan! I\'d like to book a Clean Method kitchen visit.\n\n'
+      +'• Meals per day: '+fmtMeals(state.meals)+'\n'
+      +'• Family size: '+state.people+' people\n'
+      +'• Estimated price per visit: $'+price+' (groceries not included)\n\n'
+      +'When is your next available spot?';
+    return 'https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(msg);
+  }
+
+  function highlightCell(){
+    document.querySelectorAll('.price-cell').forEach(function(td){
+      td.classList.toggle('cell-active',td.dataset.meals===state.meals&&td.dataset.people===state.people);
+    });
+  }
+
+  function render(animate){
+    var price=PRICES[state.meals][state.people];
+    var current=parseInt(amountEl.textContent.replace(/[^0-9]/g,''),10)||0;
+    if(animate&&!reduce){tween(amountEl,current,price,500);}
+    else{amountEl.textContent=price;}
+    metaEl.textContent=fmtMeals(state.meals)+' · '+fmtPeople(state.people);
+    waEl.href=buildWa();
+    highlightCell();
+  }
+
+  function setActive(container,attr,val){
+    container.querySelectorAll('.seg-btn').forEach(function(b){
+      b.classList.toggle('is-active',b.dataset[attr]===val);
+    });
+  }
+
+  document.getElementById('seg-meals').addEventListener('click',function(ev){
+    var btn=ev.target.closest('.seg-btn');if(!btn)return;
+    state.meals=btn.dataset.meals;setActive(this,'meals',state.meals);render(true);
+  });
+  document.getElementById('seg-people').addEventListener('click',function(ev){
+    var btn=ev.target.closest('.seg-btn');if(!btn)return;
+    state.people=btn.dataset.people;setActive(this,'people',state.people);render(true);
+  });
+  document.querySelectorAll('.price-cell').forEach(function(td){
+    td.addEventListener('click',function(){
+      state.meals=td.dataset.meals;state.people=td.dataset.people;
+      setActive(document.getElementById('seg-meals'),'meals',state.meals);
+      setActive(document.getElementById('seg-people'),'people',state.people);
+      render(true);
+      document.getElementById('calc').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});
+    });
+  });
+
+  // animate the price in the first time the calculator scrolls into view
+  var calcObs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting&&!calcRevealed){
+        calcRevealed=true;
+        if(!reduce)tween(amountEl,0,PRICES[state.meals][state.people],900);
+        calcObs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.4});
+  calcObs.observe(document.getElementById('calc'));
+
+  render(false); // initial state + build WhatsApp link
+
+  /* ── SPEAKING FORM ──────────────────────────── */
+  var submitBtn=document.getElementById('speaking-submit');
+  if(submitBtn){
+    submitBtn.addEventListener('click',function(){
+      var org=document.getElementById('org-name').value.trim();
+      var name=document.getElementById('contact-name').value.trim();
+      var email=document.getElementById('contact-email').value.trim();
+      var size=document.getElementById('audience-size').value;
+      if(!org||!name||!email||!size){alert('Please fill in all required fields.');return;}
+      document.getElementById('speaking-form-body').style.display='none';
+      document.getElementById('form-success').style.display='block';
+    });
+  }
+});
+</script>
+</body>
+</html>
